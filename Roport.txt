@@ -1,0 +1,1553 @@
+<template>
+  <div class="container-fluid mt-4">
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <h1 class="h3 mb-3">ລາຍງານ</h1>
+      </div>
+    </div>
+
+    <!-- Report Type Tabs -->
+    <ul class="nav nav-tabs mb-4 gap-1" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" :class="{ active: activeTab === 'payroll' }" @click="activeTab = 'payroll'" type="button">
+          <i class="bx bx-money me-1"></i> ລາຍງານເງິນເດືອນ
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" :class="{ active: activeTab === 'attendance' }" @click="activeTab = 'attendance'" type="button">
+          <i class="bx bx-check-square me-1"></i> ລາຍງານການເຮັດວຽກ
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" :class="{ active: activeTab === 'leave' }" @click="activeTab = 'leave'" type="button">
+          <i class="bx bx-calendar-x me-1"></i> ລາຍງານການລາພັກ
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" :class="{ active: activeTab === 'employee' }" @click="activeTab = 'employee'" type="button">
+          <i class="bx bx-group me-1"></i> ລາຍງານພະນັກງານ
+        </button>
+      </li>
+    </ul>
+
+    <!-- ===== PAYROLL REPORT ===== -->
+    <div v-if="activeTab === 'payroll'">
+      <!-- Filters Card -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label">ເດືອນ</label>
+              <DatePickerLao v-model="payroll.selectedMonth" @update:modelValue="GeneratePayrollReport" dateFormat="Y-m" monthPicker placeholder="ເລືອກເດືອນປີ"></DatePickerLao>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label">ພະແນກ</label>
+              <select class="form-control" v-model="payroll.selectedDepartment" @change="GeneratePayrollReport">
+                <option value="">ທັງໝົດ</option>
+                <option v-for="dept in departments" :key="dept.id" :value="dept.name">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-primary w-100" @click="GeneratePayrollReport">
+                <i class="bx bx-refresh"></i> ດຶງລາຍງານ
+              </button>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-success w-100" @click="ExportPayrollExcel">
+                <i class="bx bx-file"></i> ສົ່ງອອກ Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="row mb-4 g-2">
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລວມເງິນເດືອນ</div>
+              <div class="h5">{{ formatCurrency(payroll.summary.totalSalary) }} ກີບ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="card bg-info text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລວມໂບນັດ</div>
+              <div class="h5">{{ formatCurrency(payroll.summary.totalBonus) }} ກີບ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="card bg-warning  text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລວມຫັກ</div>
+              <div class="h5">{{ formatCurrency(payroll.summary.totalDeduction) }} ກີບ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລວມທັງໝົດ</div>
+              <div class="h5">{{ formatCurrency(payroll.summary.totalAmount) }} ກີບ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ເງິນເດືອນຕາມພະແນກ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="payrollDeptChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ເງິນເດືອນຕາມຕຳແໜ່ງ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="payrollPosChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ແນວໂນ້ມເງິນເດືອນ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="payrollTrendChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Tables -->
+      <div class="row mb-4 g-2">
+        <div class="col-12 col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຫຼຸບເງິນເດືອນຕາມພະແນກ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ພະແນກ</th>
+                      <th class="text-center">ຈຳນວນ</th>
+                      <th class="text-center">ລວມເງິນ</th>
+                      <th class="text-center">ສະເລ່ຍ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="Object.keys(payroll.summary.byDepartment || {}).length">
+                      <tr v-for="(dept, name) in payroll.summary.byDepartment" :key="name">
+                        <td>{{ name }}</td>
+                        <td class="text-center">{{ dept.count }}</td>
+                        <td class="text-center">{{ formatCurrency(dept.amount) }}</td>
+                        <td class="text-center">{{ formatCurrency(dept.amount / dept.count) }}</td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="4" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຫຼຸບເງິນເດືອນຕາມຕຳແໜ່ງ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ຕຳແໜ່ງ</th>
+                      <th class="text-center">ຈຳນວນ</th>
+                      <th class="text-center">ລວມເງິນ</th>
+                      <th class="text-center">ສະເລ່ຍ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="Object.keys(payroll.summary.byPosition || {}).length">
+                      <tr v-for="(pos, name) in payroll.summary.byPosition" :key="name">
+                        <td>{{ name }}</td>
+                        <td class="text-center">{{ pos.count }}</td>
+                        <td class="text-center">{{ formatCurrency(pos.amount) }}</td>
+                        <td class="text-center">{{ formatCurrency(pos.amount / pos.count) }}</td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="4" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ATTENDANCE REPORT ===== -->
+    <div v-if="activeTab === 'attendance'">
+      <!-- Filters Card -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <label class="form-label">ວັນທີເລີ່ມ</label>
+              <DatePickerLao v-model="attendance.startDate" @update:modelValue="GenerateAttendanceReport" dateFormat="Y-m-d" placeholder="ເລືອກວັນທີເດືອນປີ"></DatePickerLao>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">ວັນທີສິ້ນສຸດ</label>
+              <DatePickerLao v-model="attendance.endDate" @update:modelValue="GenerateAttendanceReport" dateFormat="Y-m-d" placeholder="ເລືອກວັນທີເດືອນປີ"></DatePickerLao>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">ພະນັກງານ</label>
+              <select class="form-control" v-model="attendance.selectedEmployee" @change="GenerateAttendanceReport">
+                <option value="">ທັງໝົດ</option>
+                <option v-for="emp in employees" :key="emp.id" :value="emp.id">
+                  {{ emp.fname }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-primary w-100" @click="GenerateAttendanceReport">
+                <i class="bx bx-refresh"></i> ດຶງລາຍງານ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ວັນເຮັດວຽກທັງໝົດ</div>
+              <div class="h5">{{ attendance.summary.totalDays }} ວັນ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ວັນເຮັດວຽກເຕັມ</div>
+              <div class="h5">{{ attendance.summary.fullDays }} ວັນ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-warning text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ວັນເຮັດວຽກບາງສ່ວນ</div>
+              <div class="h5">{{ attendance.summary.partialDays }} ວັນ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-danger text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ວັນຂາດວຽກ</div>
+              <div class="h5">{{ attendance.summary.absentDays }} ວັນ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຖານະການເຮັດວຽກ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="attendanceStatusChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ຊົ່ວໂມງຕາມພະນັກງານ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="attendanceHoursChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Table -->
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ລາຍລະອຽດການເຮັດວຽກ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ວັນທີ</th>
+                      <th>ຊື່ພະນັກງານ</th>
+                      <th class="text-center">ເວລາເຂົ້າ</th>
+                      <th class="text-center">ເວລາອອກ</th>
+                      <th class="text-center">ຊົ່ວໂມງ</th>
+                      <th>ສະຖານະ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="attendance.data && attendance.data.length">
+                      <tr v-for="record in attendance.data" :key="record.id">
+                        <td>{{ record.date_here }}</td>
+                        <td>{{ record.employee_fname }}</td>
+                        <td class="text-center">{{ record.check_in }}</td>
+                        <td class="text-center">{{ record.check_out }}</td>
+                        <td class="text-center">{{ record.hour }}</td>
+                        <td>
+                          <span v-if="record.hour >= 8" class="badge bg-success">ປົກກະຕິ</span>
+                          <span v-else-if="record.hour > 0" class="badge bg-warning">ເຄິ່ງມື້</span>
+                          <span v-else class="badge bg-danger">ຂາດ</span>
+                        </td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="6" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LEAVE REPORT ===== -->
+    <div v-if="activeTab === 'leave'">
+      <!-- Filters Card -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <label class="form-label">ວັນທີເລີ່ມ</label>
+              <DatePickerLao v-model="leave.startDate" @update:modelValue="GenerateLeaveReport" dateFormat="Y-m-d"></DatePickerLao>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">ວັນທີສິ້ນສຸດ</label>
+              <DatePickerLao v-model="leave.endDate" @update:modelValue="GenerateLeaveReport" dateFormat="Y-m-d"></DatePickerLao>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">ປະເພດ</label>
+              <select class="form-control" v-model="leave.selectedLeaveType" @change="GenerateLeaveReport">
+                <option value="">ທັງໝົດ</option>
+                <option v-for="type in leaveTypes" :key="type.id" :value="type.id">
+                  {{ type.name }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-primary w-100" @click="GenerateLeaveReport">
+                <i class="bx bx-refresh"></i> ດຶງລາຍງານ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລວມຄຳຮ້ອງຂໍ</div>
+              <div class="h5">{{ leave.summary.totalRequests }} ໃບ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ອະນຸມັດແລ້ວ</div>
+              <div class="h5">{{ leave.summary.approved }} ໃບ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-warning text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລໍຖ້າອະນຸມັດ</div>
+              <div class="h5">{{ leave.summary.pending }} ໃບ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-danger text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ປະຕິເສດ</div>
+              <div class="h5">{{ leave.summary.rejected }} ໃບ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຖານະຄຳຮ້ອງຂໍ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="leaveStatusChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ລາຍລະອຽດຕາມປະເພດ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="leaveTypeChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Tables -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຫຼຸບຕາມພະນັກງານ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ຊື່ພະນັກງານ</th>
+                      <th class="text-center">ວັນລາ</th>
+                      <th class="text-center">ຈຳນວນໃບ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="Object.keys(leave.summary.byEmployee || {}).length">
+                      <tr v-for="(emp, name) in leave.summary.byEmployee" :key="name">
+                        <td>{{ name }}</td>
+                        <td class="text-center">{{ emp.days }}</td>
+                        <td class="text-center">{{ emp.count }}</td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="3" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຫຼຸບຕາມປະເພດ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ປະເພດ</th>
+                      <th class="text-center">ວັນລາ</th>
+                      <th class="text-center">ຈຳນວນໃບ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="Object.keys(leave.summary.byType || {}).length">
+                      <tr v-for="(type, name) in leave.summary.byType" :key="name">
+                        <td>{{ name }}</td>
+                        <td class="text-center">{{ type.days }}</td>
+                        <td class="text-center">{{ type.count }}</td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="3" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Table -->
+      <!-- <PerfectScrollbar class="mb-4" style="max-height: 400px;"> -->
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ລາຍລະອຽດຄຳຮ້ອງຂໍ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ຊື່ພະນັກງານ</th>
+                      <th>ປະເພດ</th>
+                      <th>ວັນທີເລີ່ມ</th>
+                      <th>ວັນທີສິ້ນສຸດ</th>
+                      <th class="text-right">ວັນລາ</th>
+                      <th>ສະຖານະ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="leave.data && leave.data.length">
+                      <tr v-for="record in leave.data" :key="record.id">
+                        <td>{{ record.employee_fname }}</td>
+                        <td>{{ record.break_type_name }}</td>
+                        <td>{{ record.start_date }}</td>
+                        <td>{{ record.end_date }}</td>
+                        <td class="text-right">{{ calculateDays(record.start_date, record.end_date) }}</td>
+                        <td>
+                          <span v-if="record.status === 'ອະນຸມັດແລ້ວ'" class="badge bg-success">ອະນຸມັດ</span>
+                          <span v-else-if="record.status === 'ລໍຖ້າອະນຸມັດ'" class="badge bg-warning">ລໍຖ້າ</span>
+                          <span v-else class="badge bg-danger">ປະຕິເສດ</span>
+                        </td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="6" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- </PerfectScrollbar> -->
+    </div>
+
+    <!-- ===== EMPLOYEE REPORT ===== -->
+    <div v-if="activeTab === 'employee'">
+      <!-- Filters Card -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <label class="form-label">ພະແນກ</label>
+              <select class="form-control" v-model="employee.selectedDepartment" @change="GenerateEmployeeReport">
+                <option value="">--ທັງໝົດ--</option>
+                <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">ຕຳແໜ່ງ</label>
+              <select class="form-control" v-model="employee.selectedPosition" @change="GenerateEmployeeReport">
+                <option value="">--ທັງໝົດ--</option>
+                <option v-for="pos in positions" :key="pos.id" :value="pos.id">
+                  {{ pos.pos_name }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">ສະຖານະ</label>
+              <select class="form-control" v-model="employee.selectedStatus" @change="GenerateEmployeeReport">
+                <option value="">--ທັງໝົດ--</option>
+                <option value="ໃຊ້ງານຢູ່">ໃຊ້ງານຢູ່</option>
+                <option value="ອອກຈາກວຽກ">ອອກຈາກວຽກ</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-primary w-100" @click="GenerateEmployeeReport">
+                <i class="bx bx-refresh"></i> ດຶງລາຍງານ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ລວມພະນັກງານ</div>
+              <div class="h5">{{ employee.summary.total }} ຄົນ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ໃຊ້ງານຢູ່</div>
+              <div class="h5">{{ employee.summary.active }} ຄົນ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card bg-danger text-white">
+            <div class="card-body">
+              <div class="text-muted text-white mb-2">ອອກຈາກວຽກ</div>
+              <div class="h5">{{ employee.summary.inactive }} ຄົນ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ຈຳນວນພະນັກງານຕາມພະແນກ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="employeeDeptChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ຈຳນວນພະນັກງານຕາມຕຳແໜ່ງ</h6></div>
+            <div class="card-body" style="height: 300px;">
+              <canvas ref="employeePosChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Tables -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຫຼຸບຕາມພະແນກ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ພະແນກ</th>
+                      <th class="text-center">ຈຳນວນ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="Object.keys(employee.summary.byDepartment || {}).length">
+                      <tr v-for="(count, dept) in employee.summary.byDepartment" :key="dept">
+                        <td>{{ dept }}</td>
+                        <td class="text-center">{{ count }}</td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="2" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ສະຫຼຸບຕາມຕຳແໜ່ງ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ຕຳແໜ່ງ</th>
+                      <th class="text-center">ຈຳນວນ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="Object.keys(employee.summary.byPosition || {}).length">
+                      <tr v-for="(count, pos) in employee.summary.byPosition" :key="pos">
+                        <td>{{ pos }}</td>
+                        <td class="text-center">{{ count }}</td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="2" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Table -->
+      <PerfectScrollbar class="mb-4" style="max-height: 400px;">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header"><h6 class="mb-0">ລາຍລະອຽດພະນັກງານ</h6></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>ລະຫັດ</th>
+                      <th>ຊື່ພະນັກງານ</th>
+                      <th>ພະແນກ</th>
+                      <th>ຕຳແໜ່ງ</th>
+                      <th>ເບີໂທລະສັບ</th>
+                      <th>ອີເມວ</th>
+                      <th>ສະຖານະ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="employee.data && employee.data.length">
+                      <tr v-for="emp in employee.data" :key="emp.id">
+                        <td>{{ emp.id }}</td>
+                        <td>{{ emp.fname }}</td>
+                        <td>{{ emp.department_name }}</td>
+                        <td>{{ emp.position_name }}</td>
+                        <td>{{ emp.phone }}</td>
+                        <td>{{ emp.email }}</td>
+                        <td>
+                          <span v-if="emp.status === 'ໃຊ້ງານຢູ່'" class="badge bg-success">ໃຊ້ງານ</span>
+                          <span v-else class="badge bg-danger">ອອກຈາກວຽກ</span>
+                        </td>
+                      </tr>
+                    </template>
+                    <tr v-else>
+                      <td colspan="7" class="text-center text-muted">ບໍ່ມີຂໍ້ມູນ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </PerfectScrollbar>
+    </div>
+  </div>
+</template>
+
+<script>
+// import axios from 'axios';
+import Chart from 'chart.js/auto';
+import { useStaff } from '../Staff/AuthLogin';
+import DatePickerLao from '../Components/DatePickerLao.vue';
+
+export default {
+  name: 'ConsolidatedReport',
+  setup() {
+    const staff = useStaff();
+    return { staff };
+  },
+  data() {
+    return {
+      activeTab: 'payroll',
+      departments: [],
+      positions: [],
+      employees: [],
+      leaveTypes: [],
+      
+      payroll: {
+        selectedMonth: new Date().toISOString().slice(0, 7),
+        selectedDepartment: '',
+        data: [],
+        summary: {
+          totalSalary: 0,
+          totalBonus: 0,
+          totalDeduction: 0,
+          totalAmount: 0,
+          byDepartment: {},
+          byPosition: {}
+        },
+        charts: { dept: null, pos: null, trend: null }
+      },
+      
+      attendance: {
+        startDate: '',
+        endDate: '',
+        selectedEmployee: '',
+        data: [],
+        summary: {
+          totalDays: 0,
+          fullDays: 0,
+          partialDays: 0,
+          absentDays: 0
+        },
+        charts: { status: null, hours: null }
+      },
+      
+      leave: {
+        startDate: '',
+        endDate: '',
+        selectedLeaveType: '',
+        data: [],
+        summary: {
+          totalRequests: 0,
+          approved: 0,
+          pending: 0,
+          rejected: 0,
+          byEmployee: {},
+          byType: {}
+        },
+        charts: { status: null, type: null }
+      },
+      
+      employee: {
+        selectedDepartment: '',
+        selectedPosition: '',
+        selectedStatus: '',
+        data: [],
+        summary: {
+          total: 0,
+          active: 0,
+          inactive: 0,
+          byDepartment: {},
+          byPosition: {}
+        },
+        charts: { dept: null, pos: null }
+      }
+    };
+  },
+
+  components: {
+    DatePickerLao
+  },
+  
+  methods: {
+    formatCurrency(value) {
+      if (value === null || value === undefined || value === '') return '0';
+      const num = this.cleanNumber(value);
+      return num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    },
+
+    cleanNumber(value) {
+      if (!value) return 0;
+      const stringValue = String(value);
+      const cleaned = stringValue.replace(/[^\d.]/g, '');
+      return parseFloat(cleaned) || 0;
+    },
+
+    calculateDays(startDate, endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      return diff > 0 ? diff : 0;
+    },
+
+    // ===== PAYROLL =====
+    GeneratePayrollReport() {
+      const [year, month] = this.payroll.selectedMonth.split('-');
+      const searchMonth = `${year}-${month}`;
+
+      console.log(' Fetching payroll data for month:', searchMonth);
+      console.log(' Authorization header:', `Bearer ${this.staff.getToken ? this.staff.getToken.substring(0, 10) + '...' : 'NO_TOKEN'}`);
+
+      axios.get(`/api/payroll?pay_month=${searchMonth}&perpage=all`, {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => {
+        console.log(' Payroll API Response:', response.status, response.data);
+        let data = response.data.data || response.data;
+        
+        // Handle paginated response
+        if (data.data && Array.isArray(data.data)) {
+          data = data.data;
+        }
+        
+        if (this.payroll.selectedDepartment) {
+          data = data.filter(item => item.department_name === this.payroll.selectedDepartment);
+        }
+        
+        console.log(' Payroll records loaded:', data.length);
+        this.payroll.data = data;
+        this.calculatePayrollSummary();
+        this.UpdatePayrollCharts();
+      }).catch(error => {
+        console.error(' Payroll API Error:', error.response?.status, error.response?.data || error.message);
+        alert(`Error loading payroll: ${error.response?.data?.message || error.message}`);
+      });
+    },
+
+    calculatePayrollSummary() {
+      let totalSalary = 0, totalBonus = 0, totalDeduction = 0, totalAmount = 0;
+      const byDepartment = {}, byPosition = {};
+
+      this.payroll.data.forEach(item => {
+        const salary = parseFloat(item.salary) || 0;
+        const bonus = parseFloat(item.bonus) || 0;
+        const deduction = parseFloat(item.del_salary) || 0;
+        const amount = parseFloat(item.amount) || 0;
+
+        totalSalary += salary;
+        totalBonus += bonus;
+        totalDeduction += deduction;
+        totalAmount += amount;
+
+        if (!byDepartment[item.department_name]) {
+          byDepartment[item.department_name] = { salary: 0, bonus: 0, deduction: 0, amount: 0, count: 0 };
+        }
+        byDepartment[item.department_name].salary += salary;
+        byDepartment[item.department_name].bonus += bonus;
+        byDepartment[item.department_name].deduction += deduction;
+        byDepartment[item.department_name].amount += amount;
+        byDepartment[item.department_name].count += 1;
+
+        if (!byPosition[item.position_name]) {
+          byPosition[item.position_name] = { salary: 0, bonus: 0, deduction: 0, amount: 0, count: 0 };
+        }
+        byPosition[item.position_name].salary += salary;
+        byPosition[item.position_name].bonus += bonus;
+        byPosition[item.position_name].deduction += deduction;
+        byPosition[item.position_name].amount += amount;
+        byPosition[item.position_name].count += 1;
+      });
+
+      this.payroll.summary = { totalSalary, totalBonus, totalDeduction, totalAmount, byDepartment, byPosition };
+    },
+
+    UpdatePayrollCharts() {
+      this.$nextTick(() => {
+        this.updatePayrollDeptChart();
+        this.updatePayrollPosChart();
+        this.updatePayrollTrendChart();
+      });
+    },
+
+    updatePayrollDeptChart() {
+      const ctx = this.$refs.payrollDeptChartRef;
+      if (!ctx) return;
+      if (this.payroll.charts.dept) this.payroll.charts.dept.destroy();
+
+      const depts = Object.keys(this.payroll.summary.byDepartment);
+      const salaries = depts.map(d => this.payroll.summary.byDepartment[d].salary);
+      const bonuses = depts.map(d => this.payroll.summary.byDepartment[d].bonus);
+
+      this.payroll.charts.dept = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: depts,
+          datasets: [
+            { label: 'ເງິນເດືອນ', data: salaries, backgroundColor: 'rgba(75, 192, 192, 0.6)', borderWidth: 1 },
+            { label: 'ໂບນັດ', data: bonuses, backgroundColor: 'rgba(54, 162, 235, 0.6)', borderWidth: 1 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+      });
+    },
+
+    updatePayrollPosChart() {
+      const ctx = this.$refs.payrollPosChartRef;
+      if (!ctx) return;
+      if (this.payroll.charts.pos) this.payroll.charts.pos.destroy();
+
+      const positions = Object.keys(this.payroll.summary.byPosition);
+      const amounts = positions.map(p => this.payroll.summary.byPosition[p].amount);
+
+      this.payroll.charts.pos = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: positions,
+          datasets: [{
+            label: 'ລວມເງິນ',
+            data: amounts,
+            backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'],
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+    },
+
+    updatePayrollTrendChart() {
+      const ctx = this.$refs.payrollTrendChartRef;
+      if (!ctx) return;
+      if (this.payroll.charts.trend) this.payroll.charts.trend.destroy();
+
+      const byMonth = {};
+      this.payroll.data.forEach(item => {
+        const month = item.pay_month || 'Unknown';
+        if (!byMonth[month]) byMonth[month] = { total: 0, count: 0 };
+        byMonth[month].total += parseFloat(item.amount) || 0;
+        byMonth[month].count += 1;
+      });
+
+      const months = Object.keys(byMonth).sort();
+      const averages = months.map(m => byMonth[m].total / byMonth[m].count);
+
+      this.payroll.charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'ສະເລ່ຍເງິນ',
+            data: averages,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+      });
+    },
+
+    ExportPayrollExcel() {
+      axios.get('/api/payroll/export', {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` },
+        responseType: 'blob'
+      }).then(response => {
+        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'ລາຍງານເງິນເດືອນ.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }).catch(error => console.error('Error exporting:', error));
+    },
+
+    // ===== ATTENDANCE =====
+    GenerateAttendanceReport() {
+      console.log(' Fetching attendance data from', this.attendance.startDate, 'to', this.attendance.endDate);
+      axios.get(`/api/attendance?start_date=${this.attendance.startDate}&end_date=${this.attendance.endDate}&perpage=all`, {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => {
+        console.log(' Attendance API Response:', response.status, response.data);
+        let data = response.data.data || response.data;
+        // normalize and safely filter by employee_id (API may return numeric as string)
+        if (this.attendance.selectedEmployee) {
+          const selectedId = String(this.attendance.selectedEmployee);
+          data = data.filter(item => String(item.employee_id) === selectedId);
+        }
+        this.attendance.data = data;
+        this.calculateAttendanceSummary();
+        this.UpdateAttendanceCharts();
+      }).catch(error => {
+        console.error(' Attendance API Error:', error.response?.status, error.response?.data || error.message);
+        alert(`Error loading attendance: ${error.response?.data?.message || error.message}`);
+      });
+    },
+
+    calculateAttendanceSummary() {
+      let fullDays = 0, partialDays = 0, absentDays = 0;
+      this.attendance.data.forEach(record => {
+        const hours = parseFloat(record.hour) || 0;
+        if (hours >= 8) fullDays++;
+        else if (hours > 0) partialDays++;
+        else absentDays++;
+      });
+      this.attendance.summary = {
+        totalDays: this.attendance.data.length,
+        fullDays,
+        partialDays,
+        absentDays
+      };
+    },
+
+    UpdateAttendanceCharts() {
+      this.$nextTick(() => {
+        this.updateAttendanceStatusChart();
+        this.updateAttendanceHoursChart();
+      });
+    },
+
+    updateAttendanceStatusChart() {
+      const ctx = this.$refs.attendanceStatusChartRef;
+      if (!ctx) return;
+      if (this.attendance.charts.status) this.attendance.charts.status.destroy();
+
+      this.attendance.charts.status = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ເຕັມວັນ', 'ຄຣ່ຶ່ງວັນ', 'ຂາດວຽກ'],
+          datasets: [{
+            label: 'ຈຳນວນວັນ',
+            data: [this.attendance.summary.fullDays, this.attendance.summary.partialDays, this.attendance.summary.absentDays],
+            backgroundColor: ['rgba(75, 192, 75, 0.6)', 'rgba(255, 193, 7, 0.6)', 'rgba(244, 67, 54, 0.6)'],
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+    },
+
+    updateAttendanceHoursChart() {
+      const ctx = this.$refs.attendanceHoursChartRef;
+      if (!ctx) return;
+      if (this.attendance.charts.hours) this.attendance.charts.hours.destroy();
+
+      const employeeHours = {};
+      this.attendance.data.forEach(record => {
+        if (!employeeHours[record.employee_fname]) employeeHours[record.employee_fname] = 0;
+        employeeHours[record.employee_fname] += parseFloat(record.hour) || 0;
+      });
+
+      const labels = Object.keys(employeeHours);
+      const data = Object.values(employeeHours);
+
+      this.attendance.charts.hours = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'ຊົ່ວໂມງ',
+            data: data,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true } } }
+      });
+    },
+
+    // ===== LEAVE =====
+    GenerateLeaveReport() {
+      console.log(' Fetching leave data from', this.leave.startDate, 'to', this.leave.endDate);
+      axios.get(`/api/leave?start_date=${this.leave.startDate}&end_date=${this.leave.endDate}&perpage=all`, {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => {
+        console.log(' Leave API Response:', response.status, response.data);
+        let data = response.data.data || response.data;
+        // normalize and safely filter by break_type_id (API may return numeric as string)
+        if (this.leave.selectedLeaveType) {
+          const selectedId = String(this.leave.selectedLeaveType);
+          data = data.filter(item => String(item.break_type_id) === selectedId);
+        }
+        this.leave.data = data;
+        this.calculateLeaveSummary();
+        this.UpdateLeaveCharts();
+      }).catch(error => {
+        console.error(' Leave API Error:', error.response?.status, error.response?.data || error.message);
+        alert(`Error loading leave: ${error.response?.data?.message || error.message}`);
+      });
+    },
+
+    calculateLeaveSummary() {
+      let approved = 0, pending = 0, rejected = 0;
+      const byEmployee = {}, byType = {};
+
+      this.leave.data.forEach(record => {
+        if (record.status === 'ອະນຸມັດແລ້ວ') approved++;
+        else if (record.status === 'ລໍຖ້າອະນຸມັດ') pending++;
+        else rejected++;
+
+        if (!byEmployee[record.employee_fname]) byEmployee[record.employee_fname] = { days: 0, count: 0 };
+        const days = this.calculateDays(record.start_date, record.end_date);
+        byEmployee[record.employee_fname].days += days;
+        byEmployee[record.employee_fname].count += 1;
+
+        if (!byType[record.break_type_name]) byType[record.break_type_name] = { days: 0, count: 0 };
+        byType[record.break_type_name].days += days;
+        byType[record.break_type_name].count += 1;
+      });
+
+      this.leave.summary = {
+        totalRequests: this.leave.data.length,
+        approved,
+        pending,
+        rejected,
+        byEmployee,
+        byType
+      };
+    },
+
+    UpdateLeaveCharts() {
+      this.$nextTick(() => {
+        this.updateLeaveStatusChart();
+        this.updateLeaveTypeChart();
+      });
+    },
+
+    updateLeaveStatusChart() {
+      const ctx = this.$refs.leaveStatusChartRef;
+      if (!ctx) return;
+      if (this.leave.charts.status) this.leave.charts.status.destroy();
+
+      this.leave.charts.status = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ອະນຸມັດ', 'ລໍຖ້າ', 'ປະຕິເສດ'],
+          datasets: [{
+            label: 'ຈຳນວນໃບ',
+            data: [this.leave.summary.approved, this.leave.summary.pending, this.leave.summary.rejected],
+            backgroundColor: ['rgba(75, 192, 75, 0.6)', 'rgba(255, 193, 7, 0.6)', 'rgba(244, 67, 54, 0.6)'],
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+    },
+
+    updateLeaveTypeChart() {
+      const ctx = this.$refs.leaveTypeChartRef;
+      if (!ctx) return;
+      if (this.leave.charts.type) this.leave.charts.type.destroy();
+
+      const types = Object.keys(this.leave.summary.byType);
+      const days = types.map(t => this.leave.summary.byType[t].days);
+
+      this.leave.charts.type = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: types,
+          datasets: [{
+            label: 'ວັນລາ',
+            data: days,
+            backgroundColor: 'rgba(156, 39, 176, 0.6)',
+            borderColor: 'rgba(156, 39, 176, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+      });
+    },
+
+    // ===== EMPLOYEE =====
+    GenerateEmployeeReport() {
+      let params = '?perpage=all';
+      if (this.employee.selectedDepartment) params += `&department_id=${this.employee.selectedDepartment}`;
+      if (this.employee.selectedPosition) params += `&position_id=${this.employee.selectedPosition}`;
+      if (this.employee.selectedStatus) params += `&status=${this.employee.selectedStatus}`;
+
+      console.log(' Fetching employee data with params:', params);
+      axios.get(`/api/employee${params}`, {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => {
+        console.log(' Employee API Response:', response.status);
+        this.employee.data = response.data;
+        this.calculateEmployeeSummary();
+        this.UpdateEmployeeCharts();
+      }).catch(error => {
+        console.error(' Employee API Error:', error.response?.status, error.response?.data || error.message);
+        alert(`Error loading employees: ${error.response?.data?.message || error.message}`);
+      });
+    },
+
+    calculateEmployeeSummary() {
+      let active = 0, inactive = 0;
+      const byDepartment = {}, byPosition = {};
+
+      this.employee.data.forEach(emp => {
+        if (emp.status === 'ໃຊ້ງານຢູ່') active++;
+        else inactive++;
+
+        if (!byDepartment[emp.department_name]) byDepartment[emp.department_name] = 0;
+        byDepartment[emp.department_name]++;
+
+        if (!byPosition[emp.position_name]) byPosition[emp.position_name] = 0;
+        byPosition[emp.position_name]++;
+      });
+
+      this.employee.summary = {
+        total: this.employee.data.length,
+        active,
+        inactive,
+        byDepartment,
+        byPosition
+      };
+    },
+
+    UpdateEmployeeCharts() {
+      this.$nextTick(() => {
+        this.updateEmployeeDeptChart();
+        this.updateEmployeePosChart();
+      });
+    },
+
+    updateEmployeeDeptChart() {
+      const ctx = this.$refs.employeeDeptChartRef;
+      if (!ctx) return;
+      if (this.employee.charts.dept) this.employee.charts.dept.destroy();
+
+      const depts = Object.keys(this.employee.summary.byDepartment);
+      const counts = Object.values(this.employee.summary.byDepartment);
+
+      this.employee.charts.dept = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: depts,
+          datasets: [{
+            label: 'ຈຳນວນພະນັກງານ',
+            data: counts,
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+      });
+    },
+
+    updateEmployeePosChart() {
+      const ctx = this.$refs.employeePosChartRef;
+      if (!ctx) return;
+      if (this.employee.charts.pos) this.employee.charts.pos.destroy();
+
+      const positions = Object.keys(this.employee.summary.byPosition);
+      const counts = Object.values(this.employee.summary.byPosition);
+
+      this.employee.charts.pos = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: positions,
+          datasets: [{
+            label: 'ຈຳນວນ',
+            data: counts,
+            backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'],
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+    },
+
+    // ===== INIT =====
+    LoadData() {
+      console.log('Loading auxiliary data (departments, positions, employees, leave types)');
+      
+      axios.get('/api/department?perpage=all', {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => { 
+        console.log('Departments loaded:', response.data.length);
+        this.departments = response.data; 
+      }).catch(error => console.error('Departments Error:', error.message));
+
+      axios.get('/api/position?perpage=all', {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => { 
+        console.log('Positions loaded:', response.data.length);
+        this.positions = response.data; 
+      }).catch(error => console.error('Positions Error:', error.message));
+
+      axios.get('/api/employee?perpage=all', {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => { 
+        console.log('Employees loaded:', response.data.length);
+        this.employees = response.data; 
+      }).catch(error => console.error(' Employees Error:', error.message));
+
+      axios.get('/api/break_type?perpage=all', {
+        headers: { Authorization: `Bearer ${this.staff.getToken}` }
+      }).then(response => { 
+        console.log('Leave types loaded:', response.data.length);
+        this.leaveTypes = response.data; 
+      }).catch(error => console.error('Leave types Error:', error.message));
+    }
+  },
+
+  watch: {
+    'leave.startDate'(newVal) {
+      if (newVal) this.GenerateLeaveReport();
+    },
+    'leave.endDate'(newVal) {
+      if (newVal) this.GenerateLeaveReport();
+    },
+    'attendance.startDate'(newVal) {
+      if (newVal) this.GenerateAttendanceReport();
+    },
+    'attendance.endDate'(newVal) {
+      if (newVal) this.GenerateAttendanceReport();
+    },
+    activeTab(newVal) {
+      // auto-load data when user switches tabs (only if not already loaded)
+      if (newVal === 'attendance' && (!this.attendance.data || this.attendance.data.length === 0)) {
+        this.GenerateAttendanceReport();
+      } else if (newVal === 'leave' && (!this.leave.data || this.leave.data.length === 0)) {
+        this.GenerateLeaveReport();
+      } else if (newVal === 'employee' && (!this.employee.data || this.employee.data.length === 0)) {
+        this.GenerateEmployeeReport();
+      } else if (newVal === 'payroll' && (!this.payroll.data || this.payroll.data.length === 0)) {
+        this.GeneratePayrollReport();
+      }
+    }
+  },
+
+  mounted() {
+    this.LoadData();
+    this.GeneratePayrollReport();
+    this.GenerateLeaveReport();
+    this.GenerateAttendanceReport();
+  }
+};
+</script>
+
+<style scoped>
+.card {
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.text-muted {
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.table-responsive {
+  max-height: 500px;
+  position: relative;
+}
+
+/* PerfectScrollbar styling */
+.table-responsive :deep(.ps__rail-y) {
+  background-color: #f0f0f0;
+  opacity: 1;
+  width: 10px;
+  right: 0;
+}
+
+.table-responsive :deep(.ps__thumb-y) {
+  background-color: #c1c1c1;
+  width: 10px;
+  border-radius: 5px;
+  right: 0;
+}
+
+.table-responsive :deep(.ps__thumb-y:hover) {
+  background-color: #888;
+}
+
+.nav-tabs .nav-link {
+  color: #495057;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem 0.375rem 0 0;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+  color: #0d6efd;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #0d6efd;
+  border-color: #dee2e6 #dee2e6 #dee2e6;
+}
+
+/* Mobile-friendly improvements */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  .card-body {
+    padding: 0.75rem;
+  }
+
+  .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-control,
+  .btn {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .h5 {
+    font-size: 1.1rem;
+  }
+
+  .table-responsive {
+    max-height: 300px;
+  }
+
+  /* Filter fields stack vertically */
+  .row .col-md-3,
+  .row .col-md-4,
+  .row .col-md-6 {
+    margin-bottom: 0.5rem;
+  }
+
+  .nav-tabs {
+    flex-wrap: wrap;
+  }
+
+  .nav-tabs .nav-link {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Make KPI cards smaller on mobile */
+  .bg-primary,
+  .bg-success,
+  .bg-warning,
+  .bg-danger {
+    padding: 0.75rem;
+  }
+
+  .table {
+    font-size: 0.75rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-tabs .nav-link {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .h3 {
+    font-size: 1.3rem;
+  }
+
+  .table {
+    font-size: 0.65rem;
+  }
+
+  .card-body {
+    padding: 0.5rem;
+  }
+}
+
+.table-responsive {
+  max-height: 300px; /* ປັບຄວາມສູງຕາມທີ່ຕ້ອງການ */
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.table-responsive::-webkit-scrollbar {
+  width: 6px;      /* ປັບຂະໜາດ scrollbar ໃຫ້ນ້ອຍລົງ */
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #bdbdbd;
+  border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #8d8d8d;
+} 
+</style>

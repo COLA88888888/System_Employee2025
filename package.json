@@ -1,0 +1,34 @@
+{
+    "$schema": "https://json.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "axios": "^1.11.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0.0",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.7"
+    },
+    "dependencies": {
+        "@vitejs/plugin-vue": "^6.0.1",
+        "chart.js": "^4.4.0",
+        "dayjs": "^1.11.19",
+        "flatpickr": "^4.6.13",
+        "lodash": "^4.17.21",
+        "moment": "^2.30.1",
+        "pinia": "^3.0.3",
+        "vue": "^3.5.22",
+        "vue-cleave-component": "^3.0.2",
+        "vue-flatpickr-component": "^12.0.0",
+        "vue-i18n": "^12.0.0-alpha.3",
+        "vue-loader": "^17.4.2",
+        "vue-router": "^4.6.3",
+        "vue-sweetalert2": "^5.0.11",
+        "vue3-perfect-scrollbar": "^2.0.0"
+    }
+}
