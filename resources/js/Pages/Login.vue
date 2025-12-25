@@ -118,6 +118,10 @@
     </div>
 </template>
 <script>
+import axios from 'axios';
+import { useStaff } from '../Staff/AuthLogin';
+import { usePermissionStore } from '../stores/permission';
+
 export default {
   data() {
     return {
@@ -172,6 +176,12 @@ export default {
     },
   },
 
+  setup() {
+    const staff = useStaff();
+    const permissionStore = usePermissionStore();
+    return { staff, permissionStore };
+  },
+
   methods: {
     Login() {
       axios
@@ -191,6 +201,31 @@ export default {
               "web_user",
               JSON.stringify(response.data.user)
             );
+
+            // Update Pinia Stores
+            this.staff.setToken(response.data.token);
+            this.staff.setUser(response.data.user);
+            
+            // Extract and set permissions
+            let permissions = response.data.user.role_relation?.permissions;
+            
+            // Fallback to appended permissions attribute if relation is missing/empty but appended exists
+            if (!permissions) {
+                permissions = response.data.user.permissions;
+            }
+            
+            permissions = permissions || [];
+
+            // Parse if it's a string (API might return string or array depending on implementation details)
+            const parsedPermissions = Array.isArray(permissions) ? permissions : (typeof permissions === 'string' ? JSON.parse(permissions || '[]') : []);
+            this.permissionStore.setPermissions(parsedPermissions);
+
+            // Set Role for super admin bypass
+            const roleName = response.data.user.role_relation?.name || response.data.user.role || '';
+            const roleId = response.data.user.role_relation?.id || response.data.user.role_id || null;
+            this.permissionStore.setRole(roleName);
+            this.permissionStore.setRoleId(roleId);
+
 
             // clear form
             this.email = "";

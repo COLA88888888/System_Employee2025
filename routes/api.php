@@ -11,6 +11,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\BreakTypeController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\RoleController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -93,4 +94,11 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('/company', [CompanyController::class, 'store']);
     Route::put('/company/{company}', [CompanyController::class, 'update']);
     Route::delete('/company/{company}', [CompanyController::class, 'destroy']);
+});
+
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::post('/roles/{id}', [RoleController::class, 'update']);
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
 });

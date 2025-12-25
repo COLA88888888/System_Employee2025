@@ -16,6 +16,8 @@ import User from "../Pages/User.vue";
 import Roles from "../Pages/Roles.vue";
 import { useStaff } from '../Staff/AuthLogin';
 
+import { usePermissionStore } from '../stores/permission';
+
 //  ສ້າງ middleware ສຳລັບການເຂົ້າໄປໃນ router ສໍາລັບ Vue.js
 
 const AuthMiddleware = (to, from, next) => {
@@ -23,13 +25,24 @@ const AuthMiddleware = (to, from, next) => {
     const user = localStorage.getItem('web_user');
     const token = localStorage.getItem('web_token');
     const authStaff = useStaff();
+    const permissionStore = usePermissionStore();
 
     // ຖ້າບໍ່ມີ token ຫຼື user ກໍ່ເປັນບໍ່ອະນຸຍາດ
 
     if (token) {
+        let userData = user;
+        try {
+            userData = JSON.parse(user);
+        } catch (e) {
+            console.error("Failed to parse user data", e);
+        }
 
         authStaff.setToken(token);
-        authStaff.setUser(user);
+        authStaff.setUser(userData);
+        
+        if (userData && userData.permissions) {
+            permissionStore.setPermissions(userData.permissions);
+        }
         next();
     }
 

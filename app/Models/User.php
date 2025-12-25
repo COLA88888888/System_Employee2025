@@ -23,7 +23,10 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'role',
+        'role_id',
     ];
+
+    protected $appends = ['permissions'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -67,5 +70,15 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return[];
+    }
+
+    public function role_relation()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function getPermissionsAttribute()
+    {
+        return $this->role_relation ? $this->role_relation->permissions : [];
     }
 }

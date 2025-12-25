@@ -5,7 +5,7 @@
        <div class="row"> 
           <div class="col-md-6"></div>
           <div class="col-md-6 mb-2 d-flex justify-content-end">
-            <button class="btn btn-success" type="button" @click="AddUsers()"><i class="bx bx-plus"></i> {{ $t('add') }}</button>
+            <button class="btn btn-success" type="button" @click="AddUsers()" v-if="$can('user.create')"><i class="bx bx-plus"></i> {{ $t('add') }}</button>
           </div>
        </div>
       <!-- Users Table -->
@@ -19,7 +19,7 @@
               <th class="text-center fw-bold">ບົດບາດ</th>
               <th class="text-center fw-bold">ວັນທີສ້າງ</th>
               <th class="text-center fw-bold">ເວລາສ້າງ</th>
-              <th class="text-center fw-bold">ຈັດການ</th>
+              <th class="text-center fw-bold" v-if="$can('user.edit') || $can('user.delete')">ຈັດການ</th>
             </tr>
           </thead>
           <tbody v-if="UsersData.length > 0">
@@ -28,16 +28,17 @@
               <td class="text-center">{{ items.name }}</td>
               <td class="text-center">{{ items.email }}</td>
               <td class="text-center">
-                <span>{{ items.role }}</span>
+                <span class="badge bg-label-primary" v-if="items.role_relation">{{ items.role_relation.name }}</span>
+                <span class="badge bg-label-secondary" v-else>{{ items.role }}</span>
               </td>
               <td class="text-center">{{ $formatDate(items.created_at) }}</td>
               <td class="text-center">{{ $formatDate(items.created_at, 'time') }}</td>
-              <td class="text-center">
+              <td class="text-center" v-if="$can('user.edit') || $can('user.delete')">
                 <div class="dropdown">
                   <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-base bx bx-dots-vertical-rounded"></i></button>
                   <div class="dropdown-menu" style="">
-                    <a class="dropdown-item text-warning fw-bold" @click="EditUsers(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-edit-alt me-1"></i>{{ $t('edit') }}</a>
-                    <a class="dropdown-item text-danger fw-bold" @click="DeleteUsers(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-trash me-1"></i>{{ $t('delete') }}</a>
+                    <a class="dropdown-item text-warning fw-bold" v-if="$can('user.edit')" @click="EditUsers(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-edit-alt me-1"></i>{{ $t('edit') }}</a>
+                    <a class="dropdown-item text-danger fw-bold" v-if="$can('user.delete')" @click="DeleteUsers(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-trash me-1"></i>{{ $t('delete') }}</a>
                   </div>
                 </div>
               </td>
@@ -45,7 +46,7 @@
           </tbody>
           <tbody v-else>
             <tr>
-              <td colspan="6" class="text-center">
+              <td colspan="7" class="text-center">
                 <i class="bx bx-info-circle"></i> ບໍ່ມີຂໍ້ມູນຜູ້ໃຊ້
               </td>
             </tr>
@@ -97,10 +98,8 @@
                   <div class="row">
                       <div class="mb-6">
                         <label class="form-label" for="basic-default-country">{{ $t('role') }}: <span class="text-danger">*</span></label>
-                        <select class="form-select" v-model="FormUser.role" id="role">
-                          <option value="admin">Admin</option>
-                          <option value="manager">Manager</option>
-                          <option value="employee" selected>Employee</option>
+                        <select class="form-select" v-model="FormUser.role_id" id="role">
+                          <option v-for="role in RolesData" :key="role.id" :value="role.id">{{ role.name }}</option>
                         </select>
                       </div>
                   </div>
@@ -127,19 +126,21 @@ export default {
       FormType: true,
       EditID: "",     
       UsersData: [],
+      RolesData: [],
       FormUser: {
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
-        role: 'employee'
+        role: 'employee',
+        role_id: null
       },
     };
   },
 
   computed: {
       IsFormValid() {
-        if(this.FormUser.name === '' || this.FormUser.email === '' || this.FormUser.password === '' || this.FormUser.password_confirmation === '') {
+        if(this.FormUser.name === '' || this.FormUser.email === '' || (this.FormType && this.FormUser.password === '')) {
           return true;
         } 
         else {
@@ -160,7 +161,8 @@ export default {
         email: '',
         password: '',
         password_confirmation: '',
-        role: 'employee'
+        role: 'employee',
+        role_id: null
       };
     },
 
@@ -168,7 +170,7 @@ export default {
       if(this.FormType) {
         axios.post('/api/user/add', this.FormUser, {
           headers: {
-            Authorization: 'Bearer ' + this.staff.token,
+            Authorization: 'Bearer ' + this.staff.getToken,
           },
         }).then((response) => {
           if(response.data.success) {
@@ -219,18 +221,18 @@ export default {
         // Update existing user
         axios.post("/api/user/update/" + this.EditID, this.FormUser, {
           headers: {
-            Authorization: "Bearer " + this.staff.token,
+            Authorization: "Bearer " + this.staff.getToken,
           },
         }).then((response) => {
           if (response.data.success) {
             $('#Form_Users').modal('hide');
             this.$swal({
-              position: "top-end",
-              icon: "success",
-              title: response.data.message,
-              showConfirmButton: false,
-              timer: 2500,
-              toast: true,
+              position: "top-end", 
+              icon: "success", 
+              title: response.data.message, 
+              showConfirmButton: false, 
+              timer: 2500, 
+              toast: true, 
             });
             this.GetUsers();
           } else {
@@ -239,7 +241,7 @@ export default {
               icon: "error",
               text: response.data.message,
               title: "ຜິດພາດ",
-              showConfirmButton: false,
+              showConfirmButton: false, 
               //timer: 3500,
             });
           }
@@ -310,7 +312,7 @@ export default {
             })
             .then((response) => {
               if (response.data.success) {
-                this.GetPosition(); // refresh category list
+                this.GetUsers(); // Refresh User List - Fixed typo from GetPosition
                 this.$swal({
                   icon: "success", 
                   title: "ລົບຂໍ້ມູນສຳເລັດ",
@@ -355,7 +357,7 @@ export default {
       });
     },
 
-    GetUsers() {
+      GetUsers() {
         axios.get("/api/user", {
             headers: {
               Authorization: "Bearer " + this.staff.getToken,
@@ -377,10 +379,16 @@ export default {
             }
           });
       },
+      GetRoles() {
+          axios.get("/api/roles", {
+            headers: { Authorization: "Bearer " + this.staff.getToken }
+          }).then(res => this.RolesData = res.data).catch(e => console.error(e));
+      },
   },
 
   created() {
     this.GetUsers();
+    this.GetRoles();
   },
 };
 </script>

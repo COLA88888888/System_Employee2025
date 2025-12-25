@@ -47,82 +47,82 @@
             </router-link>
             </li> -->
 
-            <li class="menu-item" :class="$route.path=='/employee'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/employee'?'active open':''" v-if="$can('employee.view')">
             <router-link to="/employee" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-user"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('employee') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/department'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/department'?'active open':''" v-if="$can('settings.edit')">
             <router-link to="/department" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-building-house"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('department') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/position'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/position'?'active open':''" v-if="$can('settings.edit')">
             <router-link to="/position" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bookmark-alt"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('position') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/attendance'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/attendance'?'active open':''" v-if="$can('attendance.view')">
             <router-link to="/attendance" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-timer"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('attachments') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/break_type'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/break_type'?'active open':''" v-if="$can('settings.edit')">
             <router-link to="/break_type" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-notepad"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('break Type') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/leave'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/leave'?'active open':''" v-if="$can('leave.view')">
             <router-link to="/leave" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-notepad"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('leave') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/payroll'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/payroll'?'active open':''" v-if="$can('payroll.view')">
             <router-link to="/payroll" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-dollar"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('payroll') }}</div>
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/report'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/report'?'active open':''" v-if="$can('report.history') || $can('report.employee') || $can('report.attendance') || $can('report.leave') || $can('report.payroll')">
             <router-link to="/report" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('report') }}</div>
             </router-link>
             </li>
             
-            <li class="menu-item" :class="MainMenu">
+            <li class="menu-item" :class="MainMenu" v-if="$can('user.manage') || $can('user.view') || $can('role.manage') || $can('company.view') || $can('settings.edit')">
                  <a href="javascript:void(0);" class="menu-link menu-toggle" @click="MainMenu = MainMenu ? '' : 'open'">
                     <i class="menu-icon icon-base bx bx-cog"></i>                                      
                     <!-- <i class="menu-icon icon-base bx bx-layout"></i> -->
                     <div data-i18n="Layouts">{{$t('settings')}}</div>
                 </a>
                 <ul class="menu-sub" >
-                    <li class="menu-item" :class="SubMenuOpen_1">
+                    <li class="menu-item" :class="SubMenuOpen_1" v-if="$can('user.manage') || $can('user.view')">
                         <router-link to="/user" class="menu-link" @click="SubMenuOpen_1='ative'; SubMenuOpen_2='' ;openSubMenu(1)">
                             <!-- <i class="menu-icon tf-icons bx bx-user-circle"></i> -->
                         <div data-i18n="Collapsed menu">ຈັດການຜູ້ນຳໃຊ້ລະບົບ</div>
                         </router-link>
                     </li>
-                    <li class="menu-item" :class="SubMenuOpen_2">
+                    <li class="menu-item" :class="SubMenuOpen_2" v-if="$can('role.manage')">
                         <router-link to="/Roles" class="menu-link" @click="SubMenuOpen_1='ative'; SubMenuOpen_2='' ;openSubMenu(2)">
                             <!-- <i class="menu-icon tf-icons bx bx-user-circle"></i> -->
                         <div data-i18n="Collapsed menu">ກຳນົດສິດການເຂົ້າເຖິງ</div>
                         </router-link>
                     </li>
-                    <li class="menu-item" :class="SubMenuOpen_3">
+                    <li class="menu-item" :class="SubMenuOpen_3" v-if="$can('company.view')">
                         <router-link to="/company" class="menu-link" @click="SubMenuOpen_1='active'; SubMenuOpen_3='' ;openSubMenu(3)">
                             <!-- <i class="menu-icon tf-icons bx bx-user-circle"></i> -->
                         <div data-i18n="Collapsed menu">ຕັ້ງຄ່າທົ່ວໄປ</div>
@@ -130,11 +130,25 @@
                     </li>
                 </ul>
             </li>
+
+            <!-- Debug Info (Temporary) -->
+            <!-- <li class="menu-header small text-uppercase" v-if="!isMenuCollapsed">
+              <span class="menu-header-text">Debug Info</span>
+            </li>
+            <li class="menu-item" v-if="!isMenuCollapsed">
+              <div class="px-4 py-2 text-xs text-muted" style="font-size: 10px;">
+                <div>Role: {{ debugRoleName }}</div>
+                <div>ID: {{ debugRoleId }}</div>
+                <div>Perms: {{ debugPermissionsCount }}</div>
+              </div>
+            </li> -->
         </ul>
 
 </aside>
 </template>
 <script>
+import { usePermissionStore } from '../stores/permission';
+
 export default {
 data() {
     return {
@@ -147,6 +161,20 @@ data() {
         // SubMenuOpen_4:'',
     }
 },
+    computed: {
+        debugPermissionsCount() {
+            const store = usePermissionStore();
+            return store.permissions ? store.permissions.length : 0;
+        },
+        debugRoleName() {
+           const store = usePermissionStore();
+           return store.role || 'N/A';
+        },
+        debugRoleId() {
+           const store = usePermissionStore();
+           return store.role_id || 'N/A';
+        }
+    },
     methods: {
 
       toggleMenu() {
