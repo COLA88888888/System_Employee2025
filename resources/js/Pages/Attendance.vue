@@ -19,7 +19,7 @@
             <input type="text" class="form-control" v-model="Search" :placeholder="$t('search_employee')" @keyup.enter.enter="GetAttendance()"/>
             <button class="btn btn-primary" type="button" id="button-addon2" @click="GetAttendance()"><i class='bx bx-search-alt-2' ></i></button>
           </div>
-          <button class="btn btn-success" type="button" @click="AddAttendance()">
+          <button class="btn btn-success" type="button" @click="AddAttendance()" v-if="$can('attendance.manage')">
             <span class="icon-base bx bx-plus icon-md"></span>{{ $t('add') }}
           </button>
         </div>

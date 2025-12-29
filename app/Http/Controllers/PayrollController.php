@@ -8,6 +8,8 @@ use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ExportPayroll;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Notification;
+use App\Models\Employee;
 
 class PayrollController extends Controller
 {
@@ -81,6 +83,17 @@ class PayrollController extends Controller
             $payroll->pay_method = $request->pay_method;  
             $payroll->status = $request->status;  
             $payroll->save();
+
+            // ສ້າງການແຈ້ງເຕືອນ
+            $employee = Employee::find($request->employee_id);
+            $empName = $employee ? $employee->fname : 'ບໍ່ລະບຸຊື່';
+            Notification::send(
+                'ເພີ່ມລາຍການເງິນເດືອນໃໝ່',
+                "ໄດ້ເພີ່ມລາຍການເງິນເດືອນຂອງ $empName ສຳລັບເດືອນ " . Carbon::parse($pay_month)->format('m/Y'),
+                'payroll',
+                null,
+                '/payroll'
+            );
 
             $success = true;
             $message = 'ບັນທຶກຂໍ້ມູນສຳເລັດ';
@@ -164,6 +177,17 @@ class PayrollController extends Controller
         $payroll = Payroll::find($id);
         $payroll->status = $request->status;
         $payroll->save();
+
+        // ສ້າງການແຈ້ງເຕືອນເມື່ອອັບເດດສະຖານະ
+        $employee = Employee::find($payroll->employee_id);
+        $empName = $employee ? $employee->fname : 'ບໍ່ລະບຸຊື່';
+        Notification::send(
+            'ອັບເດດສະຖານະເງິນເດືອນ',
+            "ສະຖານະເງິນເດືອນຂອງ $empName ຖືກປ່ຽນເປັນ: " . ($payroll->status == 'ຈ່າຍແລ້ວ' ? 'ຈ່າຍແລ້ວ' : 'ຍັງບໍ່ທັນຈ່າຍ'),
+            'payroll',
+            null,
+            '/payroll'
+        );
 
         return response()->json([
             'success' => true,

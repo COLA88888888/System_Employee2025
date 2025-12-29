@@ -12,6 +12,8 @@ use App\Http\Controllers\BreakTypeController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DashboardController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -101,4 +103,15 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('/roles', [RoleController::class, 'store']);
     Route::post('/roles/{id}', [RoleController::class, 'update']);
     Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+});
+
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
+    Route::post('/notifications/mark-read/{id}', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+});
+
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 });

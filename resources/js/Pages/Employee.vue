@@ -136,7 +136,7 @@
                             <input type="text" class="form-control" v-model="Search" :placeholder="$t('search_employee')" @keyup.enter.enter="GetEmployee()"/>
                             <button class="btn btn-primary" type="button" id="button-addon2" @click="GetEmployee()"><i class='bx bx-search-alt-2' ></i></button>
                         </div>
-                        <button class="btn btn-success" type="button" @click="AddEmployee()">{{ $t('add') }}</button>
+                        <button class="btn btn-success" type="button" @click="AddEmployee()" v-if="$can('employee.create')">{{ $t('add') }}</button>
                     </div>
 
                 </div>
@@ -157,7 +157,7 @@
                                 <th>{{ $t('phone') }}</th>
                                 <th>{{ $t('email') }}</th>
                                 <th>{{ $t('address') }}</th>
-                                <th>{{ $t('actions') }}</th>
+                                <th v-if="$can('employee.edit') || $can('employee.delete')">{{ $t('actions') }}</th>
                             </tr>
                         </thead>
                         <tbody v-if="EmployeeData.data.length > 0">
@@ -181,12 +181,12 @@
                                 <td>{{items.tel}}</td>
                                 <td>{{items.email}}</td>
                                 <td>{{items.address}}</td>
-                                <td class="text-center">
+                                <td class="text-center" v-if="$can('employee.edit') || $can('employee.delete')">
                               <div class="dropdown">
                                 <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-base bx bx-dots-vertical-rounded"></i></button>
                                 <div class="dropdown-menu" style="">
-                                  <a class="dropdown-item text-warning fw-bold" @click="EditEmployee(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-edit-alt me-1"></i>{{ $t('edit') }}</a>
-                                  <a class="dropdown-item text-danger fw-bold" @click="DeleteEmployee(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-trash me-1"></i>{{ $t('delete') }}</a>
+                                  <a class="dropdown-item text-warning fw-bold" v-if="$can('employee.edit')" @click="EditEmployee(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-edit-alt me-1"></i>{{ $t('edit') }}</a>
+                                  <a class="dropdown-item text-danger fw-bold" v-if="$can('employee.delete')" @click="DeleteEmployee(items.id)" href="javascript:void(0);"><i class="icon-base bx bx-trash me-1"></i>{{ $t('delete') }}</a>
                                 </div>
                               </div>
                             </td>

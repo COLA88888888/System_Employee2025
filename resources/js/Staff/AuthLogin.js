@@ -7,7 +7,7 @@ export const useStaff = defineStore('auth', {
     }),
 
     getters: {
-        getter: (state) => state.user,
+        getUser: (state) => state.user,
         getToken: (state) => state.token
     },
 

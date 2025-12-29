@@ -14,6 +14,7 @@ import Department from "../Pages/Department.vue";
 import Report from "../Pages/Report.vue";
 import User from "../Pages/User.vue";
 import Roles from "../Pages/Roles.vue";
+import Notifications from "../Pages/Notifications.vue";
 import { useStaff } from '../Staff/AuthLogin';
 
 import { usePermissionStore } from '../stores/permission';
@@ -58,7 +59,7 @@ const AuthMiddleware = (to, from, next) => {
 const routes = [
     {
         path: '/',
-        redirect: '/dashboard',
+        name: 'home',
         meta: {
             middleware: [AuthMiddleware]
         }
@@ -68,7 +69,8 @@ const routes = [
         name: 'dashboard',
         component: Dashboard,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'dashboard.view'
         }
     },
     {
@@ -76,7 +78,8 @@ const routes = [
         name: 'attendance',
         component: Attendance,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'attendance.view'
         }
     },
     {
@@ -84,7 +87,8 @@ const routes = [
         name: 'payroll',
         component: Payroll,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'payroll.view'
         }
     },
     {
@@ -92,7 +96,8 @@ const routes = [
         name: 'employee',
         component: Employee,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'employee.view'
         }
     },
     {
@@ -100,7 +105,8 @@ const routes = [
         name: 'position',
         component: Position,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'settings.edit'
         }
     },
     {
@@ -108,7 +114,8 @@ const routes = [
         name: 'leave',
         component: Leave,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'leave.view'
         }
     },
     {
@@ -116,7 +123,8 @@ const routes = [
         name: 'break_type',
         component: BreakType,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'settings.edit'
         }
     },
     {
@@ -124,7 +132,8 @@ const routes = [
         name: 'department',
         component: Department,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'settings.edit'
         }
     },
     {
@@ -132,7 +141,8 @@ const routes = [
         name: 'report',
         component: Report,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: ['report.history', 'report.employee', 'report.attendance', 'report.leave', 'report.payroll']
         }
     },
     {
@@ -140,7 +150,8 @@ const routes = [
         name: 'user',
         component: User,
         meta: {
-            middleware: [AuthMiddleware]
+            middleware: [AuthMiddleware],
+            permission: 'user.view'
         }
     },
     {
@@ -157,6 +168,15 @@ const routes = [
         path: '/roles',
         name: 'roles',
         component: Roles,
+        meta: {
+            middleware: [AuthMiddleware],
+            permission: 'role.manage'
+        }
+    },
+    {
+        path: '/notifications',
+        name: 'notifications',
+        component: Notifications,
         meta: {
             middleware: [AuthMiddleware]
         }
@@ -178,31 +198,48 @@ const router = createRouter({
 
 //  ການເພີ່ມ middleware ສໍາລັບ router
 router.beforeEach((to, from, next) => {
-
     const token = localStorage.getItem('web_token');
+    const permissionStore = usePermissionStore();
 
-    if (to.meta.middleware) {
-        to.meta.middleware.forEach(middleware => {
-            middleware(to, from, next);
-        });
-    }
-
-    else {
-        if (to.path === '/login' || to.path === '/') {
-            if (token) {
-                next({
-                    path: '/dashboard',
-                    replace: true,
-                });
-            }
-            else {
-                next();
-            }
-        }
-        else {
-            next();
+    // 1. Handle Authentication Requirements
+    if (to.meta.middleware && to.meta.middleware.includes(AuthMiddleware)) {
+        if (!token) {
+            return next({ path: '/login', replace: true });
         }
     }
-})
+
+    // 2. Dynamic Landing Page (Redirect from '/' or '/login' for logged-in users)
+    if (to.path === '/' || (to.path === '/login' && token)) {
+        if (token) {
+            const allowedRoutes = [
+                { path: '/dashboard', perm: 'dashboard.view' },
+                { path: '/employee', perm: 'employee.view' },
+                { path: '/attendance', perm: 'attendance.view' },
+                { path: '/payroll', perm: 'payroll.view' },
+                { path: '/leave', perm: 'leave.view' }
+            ];
+
+            const firstAllowed = allowedRoutes.find(r => permissionStore.has(r.perm));
+            return next({ path: firstAllowed ? firstAllowed.path : '/dashboard', replace: true });
+        }
+        if (to.path === '/') {
+            return next({ path: '/login', replace: true });
+        }
+    }
+
+    // 3. Specific Route Permission Protection
+    if (to.meta.permission) {
+        const requiredPerms = Array.isArray(to.meta.permission) ? to.meta.permission : [to.meta.permission];
+        const hasAccess = requiredPerms.some(p => permissionStore.has(p));
+        
+        if (!hasAccess) {
+            console.warn(`Access denied to ${to.path}. Missing:`, to.meta.permission);
+            return next({ name: 'N404' }); 
+        }
+    }
+
+    // 4. Default Allow
+    next();
+});
 
 export default router;

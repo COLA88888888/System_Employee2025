@@ -13,7 +13,7 @@
               <input type="text" class="form-control" v-model="Search"  :placeholder="$t('search_employee')" @keyup.enter="GetPayroll()"/>
               <button class="btn btn-primary" type="button" id="button-addon2" @click="GetPayroll()"><i class='bx bx-search-alt-2' ></i></button>
             </div>
-            <button class="btn btn-success" type="button" @click="AddPayroll()">
+            <button class="btn btn-success" type="button" @click="AddPayroll()" v-if="$can('payroll.create')">
               <span class="icon-base bx bx-plus icon-md"></span>{{$t('add')}}
             </button>
           </div>
@@ -98,7 +98,7 @@
                     <div class="d-flex align-items-center">
                       <i v-if="items.status === 'ຈ່າຍແລ້ວ'"  class="bx bx-check-circle text-success fs-4 me-2" title="ຈ່າຍແລ້ວ"></i>
 
-                      <div v-if="items.status !== 'ຈ່າຍແລ້ວ'" class="dropdown">
+                      <div v-if="items.status !== 'ຈ່າຍແລ້ວ' && $can('payroll.edit')" class="dropdown">
                         <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                           <i class="bx bx-dots-vertical-rounded"></i>
                         </button>
@@ -403,10 +403,12 @@ export default {
                   title: response.data.message, 
                   showConfirmButton: false, 
                   timer: 2500, 
-                  toast: true, 
-              });
-              this.GetPayroll();
-            }
+                   toast: true, 
+               });
+               this.GetPayroll();
+               // ສັ່ງໃຫ້ແຖບແຈ້ງເຕືອນອັບເດດທັນທີ
+               window.dispatchEvent(new CustomEvent('refresh-notifications'));
+             }
             else {
               $('#FormPosition').modal('hide');
               this.$swal({
@@ -590,10 +592,12 @@ export default {
                 icon: "success",
                 title: res.data.message,
                 showConfirmButton: false,
-                timer: 2000,
-              });
-              this.GetPayroll(); // ດຶງຂໍ້ມູນໃໝ່ຫຼັງຈາກອະນຸມັດ
-            }
+                 timer: 2000,
+               });
+               this.GetPayroll(); // ດຶງຂໍ້ມູນໃໝ່ຫຼັງຈາກອະນຸມັດ
+               // ສັ່ງໃຫ້ແຖບແຈ້ງເຕືອນອັບເດດທັນທີ
+               window.dispatchEvent(new CustomEvent('refresh-notifications'));
+             }
           })
           .catch((error) => {
             console.log(error);

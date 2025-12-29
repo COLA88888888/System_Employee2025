@@ -10,7 +10,7 @@
             <input type="text" class="form-control" v-model="Search"  :placeholder="$t('search_employee')" @keyup.enter="GetLeave()"/>
             <button class="btn btn-primary" type="button" id="button-addon2" @click="GetLeave()"><i class='bx bx-search-alt-2' ></i></button>
           </div>
-          <button class="btn btn-info" type="button" @click="AddLeave()">
+          <button class="btn btn-info" type="button" @click="AddLeave()" v-if="$can('leave.manage')">
             <span class="icon-base bx bx-plus icon-md"></span>{{ $t('add') }}
           </button>
         </div>
@@ -92,15 +92,15 @@
               </span>
             </td>
             <td>
-              <div class="dropdown" v-if="items.status === 'ລໍຖ້າອະນຸມັດ'">
+              <div class="dropdown" v-if="items.status === 'ລໍຖ້າອະນຸມັດ' && ($can('leave.approve') || $can('leave.reject') || $can('leave.manage'))">
                 <button type="button" class="btn btn-sm btn-light border dropdown-toggle text-primary" data-bs-toggle="dropdown">
                   <i class="bx bx-bell bx-tada"></i>  {{ $t('change_status') }}
                 </button>
                 <div class="dropdown-menu shadow-sm border-0">
-                  <a class="dropdown-item text-success fw-bold d-flex align-items-center" href="javascript:void(0);" @click="UpdateStatus(items.id, 'ອະນຸມັດແລ້ວ')">
+                  <a class="dropdown-item text-success fw-bold d-flex align-items-center" v-if="$can('leave.approve') || $can('leave.manage')" href="javascript:void(0);" @click="UpdateStatus(items.id, 'ອະນຸມັດແລ້ວ')">
                     <i class="bx bx-check-circle text-success fs-5 me-1"></i>{{ $t('approved') }}
                   </a>
-                  <a class="dropdown-item text-danger fw-bold d-flex align-items-center" href="javascript:void(0);" @click="UpdateStatus(items.id, 'ປະຕິເສດ')">
+                  <a class="dropdown-item text-danger fw-bold d-flex align-items-center" v-if="$can('leave.reject') || $can('leave.manage')" href="javascript:void(0);" @click="UpdateStatus(items.id, 'ປະຕິເສດ')">
                     <i class="bx bx-x-circle text-danger fs-5 me-1"></i> {{ $t('rejected') }}
                   </a>
                 </div>
@@ -292,6 +292,8 @@ export default {
                   toast: true, 
               });
               this.GetLeave();
+              // ສັ່ງໃຫ້ແຖບແຈ້ງເຕືອນອັບເດດທັນທີ
+              window.dispatchEvent(new CustomEvent('refresh-notifications'));
             }
             else {
               $('#FormLeave').modal('hide');
@@ -422,6 +424,8 @@ export default {
                 timer: 2000,
               });
               this.GetLeave(); // ດຶງຂໍ້ມູນໃໝ່ຫຼັງຈາກອະນຸມັດ
+              // ສັ່ງໃຫ້ແຖບແຈ້ງເຕືອນອັບເດດທັນທີ
+              window.dispatchEvent(new CustomEvent('refresh-notifications'));
             }
           })
           .catch((error) => {

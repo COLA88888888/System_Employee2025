@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Employee;
+use App\Models\Notification;
 
 class EmployeeController extends Controller
 {
@@ -82,6 +83,15 @@ class EmployeeController extends Controller
             $employee->email = $request->email;
             $employee->address = $request->address;
             $employee->save();
+
+            // Send notification
+            Notification::send(
+                'ເພີ່ມພະນັກງານໃໝ່',
+                "ໄດ້ມີການເພີ່ມພະນັກງານໃໝ່: {$employee->fname} {$employee->lname}",
+                'activity',
+                null, // All admins/managers
+                '/employee'
+            );
 
             $success = true;
             $message = ' ບັນທຶກຂໍ້ມູນສຳເລັດ';

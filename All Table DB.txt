@@ -1,3 +1,9 @@
+ອັບເດດໂຄ້ດຂຶ້ນ Github 
+git add .	= ເລືອກເອົາທັງໝົດ
+git commit -m "ຄອມເມັ້ນ" ບໍ່ໃສ່ກະໄດ້
+git push	= ການອັບຂຶ້ນ Github
+
+
 All Table DB
 
 1. Table: Employee (Model)

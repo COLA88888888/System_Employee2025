@@ -33,7 +33,7 @@
   <div class="menu-inner-shadow"></div>
 
         <ul class="menu-inner fw-bold py-1">
-            <li class="menu-item" :class="$route.path=='/dashboard'?'active open':''">
+            <li class="menu-item" :class="$route.path=='/dashboard'?'active open':''" v-if="$can('dashboard.view')">
             <router-link to="/dashboard" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('dashborad') }}</div>
@@ -82,7 +82,7 @@
             </router-link>
             </li>
 
-            <li class="menu-item" :class="$route.path=='/leave'?'active open':''" v-if="$can('leave.view')">
+            <li class="menu-item" :class="$route.path=='/leave'?'active open':''" v-if="$can('settings.edit')">
             <router-link to="/leave" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-notepad"></i>
                 <div class="text-truncate" data-i18n="Dashboards">{{ $t('leave') }}</div>
@@ -120,12 +120,6 @@
                         <router-link to="/Roles" class="menu-link" @click="SubMenuOpen_1='ative'; SubMenuOpen_2='' ;openSubMenu(2)">
                             <!-- <i class="menu-icon tf-icons bx bx-user-circle"></i> -->
                         <div data-i18n="Collapsed menu">ກຳນົດສິດການເຂົ້າເຖິງ</div>
-                        </router-link>
-                    </li>
-                    <li class="menu-item" :class="SubMenuOpen_3" v-if="$can('company.view')">
-                        <router-link to="/company" class="menu-link" @click="SubMenuOpen_1='active'; SubMenuOpen_3='' ;openSubMenu(3)">
-                            <!-- <i class="menu-icon tf-icons bx bx-user-circle"></i> -->
-                        <div data-i18n="Collapsed menu">ຕັ້ງຄ່າທົ່ວໄປ</div>
                         </router-link>
                     </li>
                 </ul>
@@ -215,7 +209,8 @@ data() {
 </script>
 <style scoped>
   .layout-menu{
-    transition: transform 0.4s ease-in-out;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #fff !important;
   }
 
 /* ຂະໜາດແລະຄວາມຫຼາຍຂອງ sidebar ເມື່ອ collapsed */
@@ -277,5 +272,7 @@ data() {
 }
 
 
-  
+.layout-menu::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
 </style>

@@ -229,13 +229,21 @@ onMounted(() => {
                                 </tr>
                             </thead>
                             <tbody>
+
+                                 <tr>
+                                    <td class="text-secondary fw-bold">
+                                        ພາບລວມ
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="dashboard.view">
+                                            <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ເບິ່ງຂໍ້ມູນລາຍງານພາບລວມ</label>
+                                        </div>
+                                    </td>
+                                </tr>
                                 <tr>
                                     <td class="text-secondary fw-bold">
                                         ຂໍ້ມູນພະນັກງານ
-                                        <br>
-                                        <small class="text-primary cursor-pointer" @click="toggleGroup(['employee.view', 'employee.create', 'employee.edit', 'employee.delete', 'employee.manage'])">
-                                            ເລືອກທັງໝົດ
-                                        </small>
                                     </td>
                                     <td>
                                         <div class="form-check form-switch">
@@ -254,25 +262,21 @@ onMounted(() => {
                                             <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="employee.delete">
                                             <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ລົບຂໍ້ມູນພະນັກງານ</label>
                                         </div>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="employee.manage">
-                                            <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ຈັດການຂໍ້ມູນພະນັກງານທັງໝົດ</label>
-                                        </div>
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td class="text-secondary fw-bold">
                                         ການເຂົ້າວຽກ-ອອກວຽກ
-                                        <br>
-                                        <small class="text-primary cursor-pointer" @click="toggleGroup(['attendance.view'])">
-                                            ເລືອກທັງໝົດ
-                                        </small>
                                     </td>
                                     <td>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="attendance.view">
                                             <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ເບິ່ງຂໍ້ມູນການມາວຽກ</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="attendance.manage">
+                                            <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ຈັດການຂໍ້ມູນການມາວຽກ</label>
                                         </div>
                                     </td>
                                 </tr>
@@ -281,9 +285,9 @@ onMounted(() => {
                                     <td class="text-secondary fw-bold">
                                         ການລາພັກ
                                         <br>
-                                        <small class="text-primary cursor-pointer" @click="toggleGroup(['leave.view', 'leave.approve', 'leave.reject', 'leave.manage'])">
+                                        <!-- <small class="text-primary cursor-pointer" @click="toggleGroup(['leave.view', 'leave.approve', 'leave.reject', 'leave.manage'])">
                                             ເລືອກທັງໝົດ
-                                        </small>
+                                        </small> -->
                                     </td>
                                     <td>
                                         <div class="form-check form-switch">
@@ -298,10 +302,6 @@ onMounted(() => {
                                             <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="leave.reject">
                                             <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ປະຕິເສດການລາ</label>
                                         </div>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="leave.manage">
-                                            <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ຈັດການຂໍ້ມູນການລາທັງໝົດ</label>
-                                        </div>
                                     </td>
                                 </tr>
 
@@ -309,12 +309,16 @@ onMounted(() => {
                                     <td class="text-secondary fw-bold">
                                         ໃບບິນ ແລະ ການຊຳລະເງິນເດືອນ
                                         <br>
-                                        <small class="text-primary cursor-pointer" @click="toggleGroup(['payroll.edit', 'payroll.cancel', 'payroll.view'])">
+                                        <!-- <small class="text-primary cursor-pointer" @click="toggleGroup(['payroll.create', 'payroll.edit', 'payroll.cancel', 'payroll.view'])">
                                             ເລືອກທັງໝົດ
-                                        </small>
+                                        </small> -->
                                     </td>
                                     <td>
                                         <div class="vstack gap-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="payroll.create">
+                                                <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ສ້າງໃບບິນ</label>
+                                            </div>
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="payroll.edit">
                                                 <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ແລະ ແກ້ໄຂໃບບິນ</label>
@@ -335,15 +339,11 @@ onMounted(() => {
                                     <td class="text-secondary fw-bold">
                                         ການຕັ້ງຄ່າ
                                         <br>
-                                        <small class="text-primary cursor-pointer" @click="toggleGroup(['company.view', 'settings.edit', 'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage'])">
+                                        <!-- <small class="text-primary cursor-pointer" @click="toggleGroup(['company.view', 'settings.edit', 'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage'])">
                                             ເລືອກທັງໝົດ
-                                        </small>
+                                        </small> -->
                                     </td>
                                     <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="company.view">
-                                            <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ຂໍ້ມູນຂອງບໍລິສັດ</label>
-                                        </div>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="settings.edit">
                                             <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ການປ່ຽນແປງສະຖານະຕ່າງໆ</label>
@@ -374,15 +374,11 @@ onMounted(() => {
                                     <td class="text-secondary fw-bold">
                                         ລາຍງານ
                                         <br>
-                                        <small class="text-primary cursor-pointer" @click="toggleGroup(['report.history', 'report.employee', 'report.attendance', 'report.leave', 'report.payroll'])">
+                                        <!-- <small class="text-primary cursor-pointer" @click="toggleGroup(['report.history', 'report.employee', 'report.attendance', 'report.leave', 'report.payroll'])">
                                             ເລືອກທັງໝົດ
-                                        </small>
+                                        </small> -->
                                     </td>
                                     <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="report.history">
-                                            <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ລາຍງານປະຫວັດລະບົບ</label>
-                                        </div>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" v-model="currentRole.permissions" value="report.employee">
                                             <label class="form-check-label text-muted">ສິດເຂົ້າເຖິງ ລາຍງານຂໍ້ມູນພະນັກງານ</label>

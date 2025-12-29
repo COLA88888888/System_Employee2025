@@ -4,7 +4,7 @@
             <div class="card">
                 <div class="card-header pb-0 d-flex justify-between align-items-center">
                     <h5 class="card-title fw-bold">{{ $t('break Type') }}</h5>
-                    <button type="button" class="btn rounded-pill btn-icon btn-primary" @click="AddBreakType()">
+                    <button type="button" class="btn rounded-pill btn-icon btn-primary" @click="AddBreakType()" v-if="$can('settings.edit')">
                       <span class="icon-base bx bx-plus icon-md"></span>
                     </button>
                 </div>
@@ -12,7 +12,7 @@
                     <div class="list-group list-group-flush">
                         <div v-for="items in BreakTypeData" :key="items.id" class="list-group-item list-group-item-action d-flex justify-content-between">
                             <span>{{items.name}}</span>
-                            <span><i class='bx bxs-edit cursor-pointer text-warning' @click="EditBreakType(items.id)"></i> | <i class='bx bx-trash cursor-pointer text-danger' @click="DeleteBreakType(items.id)"></i></span>
+                            <span v-if="$can('settings.edit')"><i class='bx bxs-edit cursor-pointer text-warning' @click="EditBreakType(items.id)"></i> | <i class='bx bx-trash cursor-pointer text-danger' @click="DeleteBreakType(items.id)"></i></span>
                         </div>
                     </div>
                 </div>                       

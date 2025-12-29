@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Leave;
+use App\Models\Notification;
+use App\Models\Employee;
 
 class LeaveController extends Controller
 {
@@ -85,6 +87,16 @@ class LeaveController extends Controller
             $leave->reason = $request->reason;
             $leave->status = $request->status;
             $leave->save();
+
+            // Notify admins about new leave request
+            $emp = Employee::find($leave->employee_id);
+            Notification::send(
+                'ຄຳຮ້ອງຂໍລາພັກໃໝ່',
+                "ພະນັກງານ: {$emp->fname} ໄດ້ສົ່ງຄຳຮ້ອງຂໍລາພັກ",
+                'leave',
+                null, 
+                '/leave'
+            );
 
             $success = true;
             $message = 'ບັນທຶກຂໍ້ມູນສຳເລັດ';
@@ -188,6 +200,16 @@ class LeaveController extends Controller
 
         $leave->status = $request->status;
         $leave->save();
+
+        // Notify about status update
+        $emp = Employee::find($leave->employee_id);
+        Notification::send(
+            'ອັບເດດສະຖານະການລາພັກ',
+            "ຄຳຮ້ອງຂໍລາພັກຂອງ {$emp->fname} ຖືກ {$leave->status}",
+            'leave',
+            null, 
+            '/leave'
+        );
 
         return response()->json([
             'success' => true,
